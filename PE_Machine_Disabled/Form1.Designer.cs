@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -60,11 +61,9 @@
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(2, 64);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(511, 78);
+            this.label1.Size = new System.Drawing.Size(507, 78);
             this.label1.TabIndex = 2;
-            this.label1.Text = "THIS MACHINE HAS BEEN DISABLED. \r\n\r\nThis maching as been disabled because it does" +
-    " not comply with Allstate Security policies\r\nIt will shutdown in 60 seconds\r\n\r\nC" +
-    "lick OK to shutdown now\r\n";
+            this.label1.Text = resources.GetString("label1.Text");
             // 
             // Form1
             // 
