@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PE_Machine_Disabled")]
+[assembly: AssemblyTitle("Machine_Disabled")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Allstate Insurance Company")]
-[assembly: AssemblyProduct("PE_Machine_Disabled")]
-[assembly: AssemblyCopyright("Copyright © Allstate Insurance Company 2025")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Machine_Disabled")]
+[assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
