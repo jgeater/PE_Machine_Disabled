@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Machine_Disabled")]
+[assembly: AssemblyTitle("PE_Machine_Disabled")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Machine_Disabled")]
-[assembly: AssemblyCopyright("")]
+[assembly: AssemblyProduct("PE_Machine_Disabled")]
+[assembly: AssemblyCopyright("James Geater 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.2025.07.01")]
-[assembly: AssemblyFileVersion("1.2025.07.01")]
+[assembly: AssemblyVersion("1.2025.07.28")]
+[assembly: AssemblyFileVersion("1.2025.07.28")]

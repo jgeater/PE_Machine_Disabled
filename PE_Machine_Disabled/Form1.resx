@@ -117,13 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="label1.Text" xml:space="preserve">
-    <value>THIS MACHINE HAS BEEN DISABLED. 
-
-This maching as been disabled because it does not comply with current security policies
-It will automatily shutdown in 60 minutes
-
-Click Shutdown to shutdown now
-</value>
-  </data>
 </root>

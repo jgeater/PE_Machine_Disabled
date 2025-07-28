@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,15 @@ namespace PE_Machine_Disabled
     {
         private List<Form> blackScreens = new List<Form>();
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_HIDE = 0;
+        private const int SW_SHOW = 5;
+
         public Form1()
         {
             InitializeComponent();
@@ -26,65 +36,75 @@ namespace PE_Machine_Disabled
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string logDir = @"C:\temp";
-            string logfile = Path.Combine(logDir, "PE_Machine_Disabled.log");
-            if (!Directory.Exists(logDir))
-            {
-                Directory.CreateDirectory(logDir);
-            }
+            string logfile = @"C:\PKGLOG\PE_Machine_Disabled.log";
+            //log date, time and username
             using (StreamWriter w = File.AppendText(logfile))
             {
-                Log("Application started", w);
+                Log("PE_Machine_Disabled started by user: " + Environment.UserName, w);
             }
-
             // cmdline option setsched is specified, create the scheduled task
             if (Environment.GetCommandLineArgs().Contains("setsched"))
             {
                 using (StreamWriter w = File.AppendText(logfile))
                 {
-                    Log("Detected 'setsched' command-line argument", w);
+                    Log("setsched cmd line option found.", w);
                 }
-
                 //copy self to c:\ebicode\PE_Machine_Disabled.exe
-                string sourcePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                string destinationPath = @"C:\ebicode\PE_Machine_Disabled.exe";
-                //create the directory if it does not exist
+                //check if c:\ebicode exists, if not create it
                 if (!Directory.Exists(@"C:\ebicode"))
                 {
-                    Directory.CreateDirectory(@"C:\ebicode");
+                    try
+                    {
+                        Directory.CreateDirectory(@"C:\ebicode");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle the exception (e.g., log it, show a message, etc.)
+                        System.Windows.MessageBox.Show("Error creating directory: " + ex.Message);
+                        //log the error
+                        using (StreamWriter w = File.AppendText(logfile))
+                        {
+                            Log("Error creating directory: " + ex.Message, w);
+                        }
+                        Environment.Exit(0);
+                    }
                 }
+
+                string sourcePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                string destinationPath = @"C:\ebicode\PE_Machine_Disabled.exe";
                 try
                 {
+                    // Copy the executable to the destination path
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log($"Copying self from {sourcePath} to {destinationPath}", w);
+                        Log("Copying executable to " + destinationPath, w);
                     }
                     System.IO.File.Copy(sourcePath, destinationPath, true);
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log("File copy successful", w);
+                        Log("Executable copied successfully to " + destinationPath, w);
                     }
                 }
                 catch (Exception ex)
                 {
+                    // Handle the exception (e.g., log it, show a message, etc.)
+                    System.Windows.MessageBox.Show("Error copying file: " + ex.Message);
+                    //log the error
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log("Error copying file.", w);
-                        Log(ex.Message, w);
+                        Log("Error copying file: " + ex.Message, w);
                     }
-                    System.Windows.MessageBox.Show("Error copying file: " + ex.Message);
                     Environment.Exit(0);
                 }
 
                 // Create the scheduled task here
                 // 2 tasks one shuts the machine down 60 minutes after boot, the other one runs C:\ebicode\PE_Machine_Disabled.exe at user logon
-                string taskName = "PE_Machine_Disabled";
                 // Create a task to run at user logon
                 try
                 {
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log("Creating Scheduled task (Logon)", w);
+                        Log("Creating Scheduled task", w);
                     }
                     using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("PE_Machine_Disabled.PE_Machine_Disabled_Logon.xml"))
                     {
@@ -101,38 +121,34 @@ namespace PE_Machine_Disabled
                         setsched.UseShellExecute = false;
                         setsched.Arguments = @"/Create /XML c:\ebicode\PE_Machine_Disabled_Logon.xml /tn PE_Machine_Disabled_Logon /F";
                         setsched.CreateNoWindow = true;
-                        using (StreamWriter w = File.AppendText(logfile))
-                        {
-                            Log("Starting schtasks.exe for Logon task", w);
-                        }
                         var p1 = Process.Start(setsched);
                         p1.WaitForExit();
 
                         File.Delete("c:\\ebicode\\PE_Machine_Disabled_Logon.xml");
                         using (StreamWriter w = File.AppendText(logfile))
                         {
-                            Log("Done Setting schedule (Logon), exiting now", w);
+                            Log("Done Setting login schedule", w);
                         }
-                        //Environment.Exit(0);
+                        
                     }
                     catch (Exception ex)
                     {
                         using (StreamWriter w = File.AppendText(logfile))
                         {
-                            Log("Error creating schedule (Logon).", w);
+                            Log("Error creating schedule.", w);
                             Log(ex.Message, w);
                         }
                     }
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log("Scheduled task (Logon) created successfully", w);
+                        Log("Login Scheduled task created successfully", w);
                     }
                 }
                 catch (Exception ex)
                 {
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log("Exception during scheduled task (Logon) creation.", w);
+                        Log("Error creating scheduled task.", w);
                         Log(ex.Message, w);
                     }
                     System.Windows.MessageBox.Show(ex.Message);
@@ -160,24 +176,20 @@ namespace PE_Machine_Disabled
                         setsched.UseShellExecute = false;
                         setsched.Arguments = @"/Create /XML c:\ebicode\PE_Machine_Disabled_Shutdown.xml /tn PE_Machine_Disabled_Shutdown /F";
                         setsched.CreateNoWindow = true;
-                        using (StreamWriter w = File.AppendText(logfile))
-                        {
-                            Log("Starting schtasks.exe for Shutdown task", w);
-                        }
                         var p1 = Process.Start(setsched);
                         p1.WaitForExit();
                         File.Delete("c:\\ebicode\\PE_Machine_Disabled_Shutdown.xml");
                         using (StreamWriter w = File.AppendText(logfile))
                         {
-                            Log("Done Setting schedule (Shutdown), exiting now", w);
+                            Log("Done Setting shutdown schedule, exiting now", w);
                         }
-                        //Environment.Exit(0);
+                        
                     }
                     catch (Exception ex)
                     {
                         using (StreamWriter w = File.AppendText(logfile))
                         {
-                            Log("Error creating schedule (Shutdown).", w);
+                            Log("Error creating schedule.", w);
                             Log(ex.Message, w);
                         }
                     }
@@ -190,35 +202,32 @@ namespace PE_Machine_Disabled
                 {
                     using (StreamWriter w = File.AppendText(logfile))
                     {
-                        Log("Exception during scheduled task (Shutdown) creation.", w);
+                        Log("Error creating scheduled task for shutdown.", w);
                         Log(ex.Message, w);
                     }
                     System.Windows.MessageBox.Show(ex.Message);
                 }
-
-                using (StreamWriter w = File.AppendText(logfile))
-                {
-                    Log("Exiting after setsched operations", w);
-                }
+                System.Diagnostics.Process.Start("shutdown", "/s /t 0");
                 Environment.Exit(0);
 
             }
+
 
             // cmdline option delsched is specified, delete the scheduled task
             if (Environment.GetCommandLineArgs().Contains("delsched"))
             {
                 using (StreamWriter w = File.AppendText(logfile))
                 {
-                    Log("Detected 'delsched' command-line argument", w);
+                    Log("delsched cmd line option found.", w);
                 }
                 // Delete the scheduled task here
                 string taskName = "PE_Machine_Disabled";
                 System.Diagnostics.Process.Start("schtasks", $"/delete /tn \"{taskName}_Logon\" /f");
                 System.Diagnostics.Process.Start("schtasks", $"/delete /tn \"{taskName}_Shutdown\" /f");
+
                 using (StreamWriter w = File.AppendText(logfile))
                 {
-                    Log("Scheduled tasks deleted", w);
-                    Log("Exiting after delsched operations", w);
+                    Log("Scheduled task deleted successfully", w);
                 }
                 //System.Windows.MessageBox.Show("Scheduled task deleted successfully.");
                 Environment.Exit(0);
@@ -227,22 +236,32 @@ namespace PE_Machine_Disabled
             // look for PE_Machine_Disabled.txt in the current directory
             if (System.IO.File.Exists("PE_Machine_Disabled.txt"))
             {
-                using (StreamWriter w = File.AppendText(logfile))
-                {
-                    Log("Found PE_Machine_Disabled.txt, reading contents", w);
-                }
                 // read the file and display the contents in label1
                 string message = System.IO.File.ReadAllText("PE_Machine_Disabled.txt");
                 label1.Text = message;
+                // log the message to the logfile
+                using (StreamWriter w = File.AppendText(logfile))
+                {
+                    Log("PE_Machine_Disabled.txt found and read successfully.", w);
+                    Log("Message: " + message, w);
+                }
             }
             else
             {
+                // if the file does not exist, display a default message
+                //log default message in use   
                 using (StreamWriter w = File.AppendText(logfile))
                 {
-                    Log("PE_Machine_Disabled.txt not found, using default message", w);
+                    Log("PE_Machine_Disabled.txt not found in current folder, using default message.", w);
                 }
-                // if the file does not exist, display a default message
             }
+
+            //hide the taskbar
+            using (StreamWriter w = File.AppendText(logfile))
+            {
+                Log("Hiding taskbar.", w);
+            }
+            HideTaskbar();
 
             //scale the UI elements based on screen resolution
             float fontSize = Math.Min(this.ClientSize.Width, this.ClientSize.Height) / 30f; // Adjust the divisor to change the scaling factor
@@ -257,25 +276,26 @@ namespace PE_Machine_Disabled
             button1.Height = (int)(fontSize * 2.5f); // Adjust height based on font size
             button2.Height = (int)(fontSize * 2.5f); // Adjust height based on font size
 
-            using (StreamWriter w = File.AppendText(logfile))
-            {
-                Log($"UI scaled with font size {fontSize}", w);
-            }
 
             button1.Visible = false;
             // Check to see if user is local admin
-            // If user is local admin, show button1
-            bool isAdmin = IsUserLocalAdmin();
-            using (StreamWriter w = File.AppendText(logfile))
-            {
-                Log($"Is user local admin: {isAdmin}", w);
-            }
-            if (isAdmin)
+            // If user is local admin, show exit button
+            if (IsUserLocalAdmin())
             {
                 button1.Visible = true;
+                using (StreamWriter w = File.AppendText(logfile))
+                {
+                    Log("User is local admin, Exit button is visible.", w);
+                }
             }
 
-            //show form1 full screen anmd topmost on main screen
+            //show form1 full screen and topmost on main screen
+            //log the action
+            using (StreamWriter w = File.AppendText(logfile))
+            {
+                Log("Showing UI full screen and topmost on main screen.", w);
+            }
+
             this.FormBorderStyle = FormBorderStyle.None;
             this.WindowState = FormWindowState.Maximized;
             this.TopMost = true;
@@ -297,8 +317,18 @@ namespace PE_Machine_Disabled
             // Set dispaly black screen on all secondary monitors
             foreach (Screen s in Screen.AllScreens)
             {
+                //log the screen information
+                using (StreamWriter w = File.AppendText(logfile))
+                {
+                    Log($"Screen: {s.DeviceName}, Bounds: {s.Bounds}, Primary: {s.Primary}", w);
+                }
                 if (s != Screen.PrimaryScreen)
                 {
+                    // Create a full-screen black form for each secondary screen
+                    using (StreamWriter w = File.AppendText(logfile))
+                    {
+                        Log($"Creating black screen for secondary monitor: {s.DeviceName}", w);
+                    }
                     Form blackScreen = new Form();
                     blackScreen.FormBorderStyle = FormBorderStyle.None;
                     blackScreen.StartPosition = FormStartPosition.Manual;
@@ -311,11 +341,25 @@ namespace PE_Machine_Disabled
                     blackScreens.Add(blackScreen); // Keep a reference
                 }
             }
-            using (StreamWriter w = File.AppendText(logfile))
+            // If the user is not a local admin SCHEDULE A SHUTDOIWN IN 1 HOUR
+            if (!IsUserLocalAdmin())
             {
-                Log("Form1_Load completed", w);
+                using (StreamWriter w = File.AppendText(logfile))
+                {
+                    Log("User is not local admin, scheduling a shutdown in 1 hour.", w);
+                }
+                // Schedule a shutdown in 1 hour
+                System.Diagnostics.Process.Start("shutdown", "/s /t 3600");
+            }
+            else
+            {
+                using (StreamWriter w = File.AppendText(logfile))
+                {
+                    Log("User is local admin, no shutdown scheduled.", w);
+                }
             }
         }
+
 
         private bool IsUserLocalAdmin()
         {
@@ -330,14 +374,46 @@ namespace PE_Machine_Disabled
         private void button2_Click(object sender, EventArgs e)
         {
             //shutdown the machine
+
+            string logfile = @"C:\PKGLOG\PE_Machine_Disabled.log";
+            using (StreamWriter w = File.AppendText(logfile))
+            {
+                Log("Shutdown button clicked, shutting down the machine.", w);
+            }
             System.Diagnostics.Process.Start("shutdown", "/s /t 0");
             Environment.Exit(0);
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            
+            //log the button click
+            string logfile = @"C:\PKGLOG\PE_Machine_Disabled.log";
+            using (StreamWriter w = File.AppendText(logfile))
+            {
+                Log("Exit button clicked, exiting the application.", w);
+            }
+            //unhide the taskbar
+            ShowTaskbar();
             Environment.Exit(0);
+        }
+
+        private void HideTaskbar()
+        {
+            IntPtr taskBar = FindWindow("Shell_TrayWnd", null);
+            if (taskBar != IntPtr.Zero)
+            {
+                ShowWindow(taskBar, SW_HIDE);
+            }
+        }
+
+        private void ShowTaskbar()
+        {
+            IntPtr taskBar = FindWindow("Shell_TrayWnd", null);
+            if (taskBar != IntPtr.Zero)
+
+            {
+                ShowWindow(taskBar, SW_SHOW);
+            }
         }
 
         public static void Log(string logMessage, TextWriter w)
